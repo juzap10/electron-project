@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Our Code World</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <div>
+            <div style="text-align:center;">
+                <input type="text" placeholder="Selcciona un archivo" id="actual-file" disabled="disabled"/>
+                <input type="button" value="Selccionar un archivo" id="select-file"/>
+            </div>
+            <br><br>
+            <textarea id="content-editor" rows="5"></textarea><br><br>
+            <input type="button" id="save-changes" value="Guardar cambios"/>
+            <input type="button" id="delete-file" value="Borrar archivo"/>
+        </div>
+        <hr>
+        <div style="text-align:center;">
+            <p>
+                El archivo contendra lo mismo que el editor.
+            </p>
+            <input type="button" value="Seleccione un archivo" id="create-new-file"/>
+        </div>
+        <script>
+            var appRemote = require('electron').remote;  //para rederizar el front
+            var dialog = appRemote.dialog; //para el dialogo con el sistema
+            var fs = require('fs'); //para el menejo de archivos
+                
+            document.getElementById('select-file').addEventListener('click',function(){
+                dialog.showOpenDialog(function (fileNames) {
+                    if(fileNames === undefined){
+                        console.log("Ningún archivo seleccionado");
+                    }else{
+                        document.getElementById("actual-file").value = fileNames[0];
+                        readFile(fileNames[0]);
+                    }
+                }); 
+            },false);
+            
+            document.getElementById('save-changes').addEventListener('click',function(){
+                var actualFilePath = document.getElementById("actual-file").value;
+                
+                if(actualFilePath){
+                    saveChanges(actualFilePath,document.getElementById('content-editor').value);
+                }else{
+                    alert("Por favor selecciona un archivo primero");
+                }
+            },false);
+            
+            document.getElementById('delete-file').addEventListener('click',function(){
+                var actualFilePath = document.getElementById("actual-file").value;
+                
+                if(actualFilePath){
+                    deleteFile(actualFilePath);
+                    document.getElementById("actual-file").value = "";
+                    document.getElementById("content-editor").value = "";
+                }else{
+                    alert("Por favor selecciona un archivo primero");
+                }
+            },false);
+            
+            document.getElementById('create-new-file').addEventListener('click',function(){
+                var content = document.getElementById("content-editor").value;
+                
+                dialog.showSaveDialog(function (fileName) {
+                    if (fileName === undefined){
+                        console.log("No has guardado el archivo");
+                        return;
+                    }
+                    
+                    fs.writeFile(fileName, content, function (err) {
+                        if(err){
+                            alert("Ocurrio un error creando el archivo "+ err.message)
+                        }
+                        
+                        alert("El archivo fue guardado con exito");
+                    });
+                }); 
+            },false);
+            
+            function readFile(filepath) {
+                fs.readFile(filepath, 'utf-8', function (err, data) {
+                    if(err){
+                        alert("Ocurrio un error leyendo el archivo :" + err.message);
+                        return;
+                    }
+                    
+                    document.getElementById("content-editor").value = data;
+                });
+            }
+            
+            function deleteFile(filepath){
+                fs.exists(filepath, function(exists) {
+                    if(exists) {
+                        // File exists deletings
+                        fs.unlink(filepath,function(err){
+                            if(err){
+                                alert("Ocurrio un error actualizando el archivo"+ err.message);
+                                console.log(err);
+                                return;
+                            }
+                        });
+                    } else {
+                        alert("Este archivo no exite por lo que no se puede eliminar");
+                    }
+                });
+            }
+            
+            function saveChanges(filepath,content){
+                fs.writeFile(filepath, content, function (err) {
+                    if(err){
+                        alert("Ocurrio un error actualizando el archivo"+ err.message);
+                        console.log(err);
+                        return;
+                    }
+                    
+                    alert("El archivo fue guardado con exito");
+                }); 
+            }
+        </script>
+    </body>
+</html>
